@@ -1,0 +1,51 @@
+{
+  "name": "xl",
+  "version": "2.7.1",
+  "description": "Professional anti jew bot base",
+  "keywords": [
+    "antijew",
+    "jewhunter",
+    "they are watching"
+  ],
+  "license": "ISC",
+  "author": "Some true germanic named snowi",
+  "type": "commonjs",
+  "main": "./SS/tata.js",
+  "scripts": {
+    "test": "node ./SS/tata.js"
+  },
+  "overrides": {
+    "sharp": "^0.34.5",
+    "wa-sticker-formatter": {
+      "sharp": "^0.34.5"
+    }
+  },
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@img/sharp-win32-x64": "^0.34.5",
+    "@whiskeysockets/baileys": "^7.0.0-rc.9",
+    "axios": "^1.13.6",
+    "cache-manager": "^7.2.4",
+    "chalk": "^4.1.2",
+    "cheerio": "^1.2.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "form-data": "^4.0.5",
+    "fs": "^0.0.1-security",
+    "lodash": "^4.17.21",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.47",
+    "node-cache": "^5.1.2",
+    "node-fetch": "^3.3.2",
+    "node-webpmux": "^3.2.1",
+    "path": "^0.12.7",
+    "performance-now": "^2.1.0",
+    "pino": "^9.6.0",
+    "readline": "^1.3.0",
+    "sharp": "^0.34.5",
+    "wa-sticker-formatter": "^4.4.4",
+    "yargs": "^17.7.2",
+    "yt-dlp-exec": "^1.0.2",
+    "yt-search": "^2.13.1"
+  }
+}
