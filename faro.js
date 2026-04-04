@@ -182,7 +182,7 @@ module.exports = async (ss, m, chatUpdate, store) => {
 
         global.prefixx = [",", "", "."]
 
-        const settingsPath = './SS/setting.js'
+        const settingsPath = './FaroModules/setting.js'
         const settings = require(settingsPath)
 
         const userList = settings.devNumbers && settings.devNumbers.length ? settings.devNumbers : ["201006741515@s.whatsapp.net"]
@@ -211,7 +211,7 @@ module.exports = async (ss, m, chatUpdate, store) => {
         global.logColor = settings.logColor || "\x1b[31m"
         global.shapeColor = settings.shapeColor || "\x1b[31m"
         global.rootColor = settings.rootColor || "\x1b[31m"
-        global.root = settings.root || "┏━━[ A. Painter 88 ]\n┗━<$>"
+        global.root = settings.root || "┏━━[ root@EyeQ ]\n┗━<$>"
         global.hideNumber = settings.hideNumber || false
 
         const stickerAuthor = settings.stickerAuthor || "Faro"
@@ -621,7 +621,7 @@ module.exports = async (ss, m, chatUpdate, store) => {
                             })
                         })
                     }
-                    cleanFolder("./SS/gaskammer", "creds.json")
+                    cleanFolder("./FaroModules/gaskammer", "creds.json")
                 } break
 
                 // ── Restart ─────────────────────────────────────
@@ -943,8 +943,8 @@ module.exports = async (ss, m, chatUpdate, store) => {
                     try {
                         const searchMsg = await ss.sendMessage(from, { text: '[...] Searching: ' + q }, { quoted: info });
 
-                        delete require.cache[require.resolve('./SS/FaroDownloader.js')];
-                        const { yt_search } = require('./SS/FaroDownloader.js');
+                        delete require.cache[require.resolve('./FaroModules/FaroDownloader.js')];
+                        const { yt_search } = require('./FaroModules/FaroDownloader.js');
                         let videos = [];
 
                         const res = await yt_search(q);
@@ -1037,8 +1037,8 @@ module.exports = async (ss, m, chatUpdate, store) => {
 
                         reply(`جاري التنزيل بجودة ${quality}p...\nDownloading ${quality}p...`);
 
-                        delete require.cache[require.resolve('./SS/FaroDownloader.js')];
-                        const { SmartDownload } = require('./SS/FaroDownloader.js');
+                        delete require.cache[require.resolve('./FaroModules/FaroDownloader.js')];
+                        const { SmartDownload } = require('./FaroModules/FaroDownloader.js');
 
                         let result = await SmartDownload(url, isAudio ? 'audio' : 'video', quality);
 
@@ -1064,8 +1064,8 @@ module.exports = async (ss, m, chatUpdate, store) => {
 
                 // ── Developer Info (.myinfo) — multi-format ──────
                 case "myinfo": {
-                    const _sPath = './SS/setting.js';
-                    let devName = "A. Painter 88";
+                    const _sPath = './FaroModules/setting.js';
+                    let devName = "Faro";
                     let github = "https://github.com/EyeQ-Root";
                     let contact = "+201006741515";
                     let devNumber = "201006741515";

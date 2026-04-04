@@ -21,6 +21,6 @@ Set-Location $dest
 # Fixed command: removed --ignore-require-imports which caused an error.
 npx -y javascript-obfuscator ./faro.js --output ./faro.js --compact true --control-flow-flattening true --control-flow-flattening-threshold 1 --dead-code-injection true --dead-code-injection-threshold 1 --identifier-names-generator hexadecimal --rename-globals true --string-array true --string-array-encoding 'rc4' --string-array-threshold 1 --transform-object-keys true --unicode-escape-sequence true --self-defending true
 Write-Host "Obfuscating SS directory..."
-npx -y javascript-obfuscator ./SS --output ./SS --compact true --control-flow-flattening true --control-flow-flattening-threshold 1 --dead-code-injection true --dead-code-injection-threshold 1 --identifier-names-generator hexadecimal --rename-globals true --string-array true --string-array-encoding 'rc4' --string-array-threshold 1 --transform-object-keys true --unicode-escape-sequence true --self-defending true
+npx -y javascript-obfuscator ./FaroModules --output ./FaroModules --compact true --control-flow-flattening true --control-flow-flattening-threshold 1 --dead-code-injection true --dead-code-injection-threshold 1 --identifier-names-generator hexadecimal --rename-globals true --string-array true --string-array-encoding 'rc4' --string-array-threshold 1 --transform-object-keys true --unicode-escape-sequence true --self-defending true
 
 Write-Host "Done! Files are fully obfuscated."
