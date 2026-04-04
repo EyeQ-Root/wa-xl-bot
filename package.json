@@ -8,11 +8,11 @@
     "they are watching"
   ],
   "license": "ISC",
-  "author": "Some true germanic named snowi",
+  "author": "Some true germanic named faro",
   "type": "commonjs",
-  "main": "./SS/tata.js",
+  "main": "./SS/FaroLuncher.js",
   "scripts": {
-    "test": "node ./SS/tata.js"
+    "test": "node ./SS/FaroLuncher.js"
   },
   "overrides": {
     "sharp": "^0.34.5",

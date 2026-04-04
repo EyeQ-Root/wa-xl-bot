@@ -5,7 +5,7 @@ pkg install yarn
 
 If you already done the upper start here
  
-cd /sdcard/271k
+cd /sdcard/faro
 yarn install
 
 After this is done open the bot folder in any file manager (i recommend Mt manager) and go into node_modules search for @whiskeysockets and delete it.  
