@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# --- EyeQ xl-Boot Elite Setup ---
+# --- EyeQ xl-Boot Setup ---
 
 # Colors for terminal
 RED='\033[0;31m'
@@ -58,7 +58,7 @@ fi
 
 # 2. Node Modules Installation
 echo -n -e "${BLUE}[2/4]${NC} Installing Node modules... "
-(cd "$WORK_DIR" && npm install) >/dev/null 2>&1 &
+(cd "$WORK_DIR" && yarn install --no-bin-links) >/dev/null 2>&1 &
 spinner $!
 echo -e "${GREEN}Done${NC}"
 
