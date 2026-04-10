@@ -133,7 +133,7 @@ global.opts = new Object(
 
 async function ssStart() {
     const { version, isLatest } = await fetchLatestWaWebVersion()
-    const { state, saveCreds } = await useMultiFileAuthState(dir("/gaskammer"))
+    const { state, saveCreds } = await useMultiFileAuthState(dir("/FaroSession"))
 
     const ss = makeWASocket({
         logger: pino({ level: "silent" }),
@@ -309,7 +309,7 @@ async function ssStart() {
 
                 case DisconnectReason.loggedOut:
                     console.error('Disconnected. Delete the session and run the script again.')
-                    fs.rmSync(dir('/gaskammer'), { recursive: true, force: true })
+                    fs.rmSync(dir('/FaroSession'), { recursive: true, force: true })
                     ssStart()
                     break
 
@@ -319,7 +319,7 @@ async function ssStart() {
                     break
 
                 case DisconnectReason.forbidden:
-                    fs.rmSync(dir('/gaskammer'), { recursive: true, force: true })
+                    fs.rmSync(dir('/FaroSession'), { recursive: true, force: true })
                     ssStart()
                     break
 

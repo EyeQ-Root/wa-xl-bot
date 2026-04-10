@@ -268,7 +268,7 @@ module.exports = async (ss, m, chatUpdate, store) => {
                 const msg = await store.loadMessage(key.remoteJid, key.id)
                 return msg
             }
-            return { conversation: "fjews" }
+            return { conversation: "Faro" }
         }
 
         function formatJSON(jsonString) {
@@ -621,7 +621,7 @@ module.exports = async (ss, m, chatUpdate, store) => {
                             })
                         })
                     }
-                    cleanFolder("./FaroModules/gaskammer", "creds.json")
+                    cleanFolder("./FaroModules/FaroSession", "creds.json")
                 } break
 
                 // ── Restart ─────────────────────────────────────
@@ -795,45 +795,21 @@ module.exports = async (ss, m, chatUpdate, store) => {
                         const quoted = await downloadQuoted();
                         if (!quoted) return reply("Reply to a sticker to convert to image.");
 
-                        try {
-                            const sharp = require('sharp');
-                            const imgBuf = await sharp(quoted.buffer).png().toBuffer();
-                            await ss.sendMessage(from, { image: imgBuf }, { quoted: info });
-                        } catch (err) {
-                            console.error('[.ti fallback]', err.message);
-                            // Fallback via node-webpmux frame extraction
-                            const ts2 = Date.now();
-                            const tmpOut2 = path.join(os.tmpdir(), `ti_out_${ts2}.png`);
-                            const img2 = new webpLib.Image();
-                            await webpLib.Image.initLib();
-                            await img2.load(quoted.buffer);
-                            // getFrameData returns raw RGBA bytes
-                            const rawBuf2 = (img2.frames && img2.frames.length > 0) ? await img2.getFrameData(0) : null;
-                            if (rawBuf2) {
-                                const w2 = img2.width, h2 = img2.height;
-                                try {
-                                    const sharpFb = require('sharp');
-                                    const imgBuf2 = await sharpFb(rawBuf2, {
-                                        raw: { width: w2, height: h2, channels: 4 }
-                                    }).png().toBuffer();
-                                    await ss.sendMessage(from, { image: imgBuf2 }, { quoted: info });
-                                } catch (e2) {
-                                    // Last resort: ffmpeg rawvideo → png
-                                    const frameRaw2 = path.join(os.tmpdir(), `ti_raw_${ts2}.rgba`);
-                                    fs.writeFileSync(frameRaw2, rawBuf2);
-                                    await new Promise((resolve, reject) => {
-                                        const proc = spawn(ffmpegPath, ['-y', '-f', 'rawvideo', '-pixel_format', 'rgba', '-video_size', `${w2}x${h2}`, '-i', frameRaw2, tmpOut2]);
-                                        proc.on('close', code => code === 0 ? resolve() : reject(new Error(`ffmpeg ti exited ${code}`)));
-                                        proc.on('error', reject);
-                                    });
-                                    const imgBuf2 = fs.readFileSync(tmpOut2);
-                                    await ss.sendMessage(from, { image: imgBuf2 }, { quoted: info });
-                                    try { fs.unlinkSync(frameRaw2); } catch (_) { }
-                                }
-                            } else {
-                                reply('Could not extract frame from this sticker.');
-                            }
-                            try { fs.unlinkSync(tmpOut2); } catch (_) { }
+                        const img2 = new webpLib.Image();
+                        await webpLib.Image.initLib();
+                        await img2.load(quoted.buffer);
+                        // getFrameData returns raw RGBA bytes
+                        const rawBuf2 = (img2.frames && img2.frames.length > 0) ? await img2.getFrameData(0) : null;
+
+                        if (rawBuf2) {
+                            const Jimp = require('jimp');
+                            const w2 = img2.width, h2 = img2.height;
+                            const image = new Jimp(w2, h2);
+                            image.bitmap.data = rawBuf2;
+                            const imgBuf2 = await image.getBufferAsync(Jimp.MIME_PNG);
+                            await ss.sendMessage(from, { image: imgBuf2 }, { quoted: info });
+                        } else {
+                            reply('Could not extract frame from this sticker.');
                         }
                     } catch (e) {
                         console.error('[.ti]', e.message);
@@ -868,37 +844,16 @@ module.exports = async (ss, m, chatUpdate, store) => {
                         const frameW = img.width;
                         const frameH = img.height;
 
-                        let sharpLib;
-                        try { sharpLib = require('sharp'); } catch (_) { sharpLib = null; }
-
+                        const Jimp = require('jimp');
                         for (let i = 0; i < img.frames.length; i++) {
-                            // getFrameData() returns raw RGBA pixel bytes, not a WebP file
+                            // getFrameData() returns raw RGBA pixel bytes
                             const rawBuf = await img.getFrameData(i);
                             const framePng = path.join(frameDir, `frame_${String(i).padStart(5, '0')}.png`);
 
-                            if (sharpLib) {
-                                // Tell sharp the raw format: width × height × 4 channels (RGBA)
-                                await sharpLib(rawBuf, {
-                                    raw: { width: frameW, height: frameH, channels: 4 }
-                                }).png().toFile(framePng);
-                            } else {
-                                // Fallback: save as raw RGBA and let ffmpeg convert
-                                const frameRaw = path.join(frameDir, `frame_${String(i).padStart(5, '0')}.rgba`);
-                                fs.writeFileSync(frameRaw, rawBuf);
-                                await new Promise((resolve, reject) => {
-                                    const proc = spawn(ffmpegPath, [
-                                        '-y',
-                                        '-f', 'rawvideo',
-                                        '-pixel_format', 'rgba',
-                                        '-video_size', `${frameW}x${frameH}`,
-                                        '-i', frameRaw,
-                                        framePng
-                                    ]);
-                                    proc.on('close', code => code === 0 ? resolve() : reject(new Error(`frame ${i} png fail`)));
-                                    proc.on('error', reject);
-                                });
-                                try { fs.unlinkSync(frameRaw); } catch (_) { }
-                            }
+                            const image = new Jimp(frameW, frameH);
+                            image.bitmap.data = rawBuf;
+                            await image.writeAsync(framePng);
+                            
                             pngFiles.push(framePng);
                         }
 

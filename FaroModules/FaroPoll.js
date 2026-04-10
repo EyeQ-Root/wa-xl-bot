@@ -1,5 +1,5 @@
 const fs = require("fs")
-const { proto } = require("@whiskeysockets/baileys/WAProto")
+const { proto } = require("../@whiskeysockets/baileys/WAProto")
 const { aesDecryptGCM, hmacSign } = require("@whiskeysockets/baileys/lib/Utils/crypto")
 const toNumber = t => typeof t === "object" && t ? ("toNumber" in t ? t.toNumber() : t.low ?? 0) : t ?? 0
 const asBuf = v => { if (!v) return Buffer.alloc(0); if (Buffer.isBuffer(v)) return v; if (v instanceof Uint8Array) return Buffer.from(v); if (typeof v === "string") return Buffer.from(v, "base64"); if (v?.type === "Buffer" && Array.isArray(v.data)) return Buffer.from(v.data); return Buffer.from(v) }
