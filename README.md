@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>EyeQ Bot — Ultimate Setup Guide</h1>
+<h1>EyeQ Bot — Setup</h1>
 
 <p>WhatsApp bot powered by Baileys · Node.js — Minimalistic & Powerful</p>
 
