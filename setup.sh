@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# --- EyeQ xl-Boot Elite Setup ---
+
+# Colors for terminal
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
 spinner() {
     local pid=$1
     local delay=0.1
@@ -14,62 +22,61 @@ spinner() {
     printf "    \b\b\b\b"
 }
 
-echo "Starting Bot Setup..."
-echo "-----------------------------------"
+echo -e "${BLUE}-----------------------------------${NC}"
+echo -e "${GREEN}    EyeQ xl-Bot Setup       ${NC}"
+echo -e "${BLUE}-----------------------------------${NC}"
 
 WORK_DIR=$(pwd)
-echo "Current directory detected: $WORK_DIR"
-echo ""
+echo -e "Directory: ${BLUE}$WORK_DIR${NC}\n"
 
+# 1. Environment Detection & Package Installation
 if command -v pkg &> /dev/null; then
-    echo -n "Updating packages (Termux)... "
-    (pkg update -y && pkg upgrade -y) >/dev/null 2>&1 &
+    echo -e "${BLUE}[1/4]${NC} Environment: ${GREEN}Termux${NC}"
+    echo -n "Updating & Installing dependencies... "
+    (pkg update -y && pkg upgrade -y && pkg install git nodejs-lts ffmpeg python libvips -y && pip install yt-dlp) >/dev/null 2>&1 &
     spinner $!
-    echo "Done"
-
-    echo -n "Installing dependencies (git, nodejs, nodejs-lts, yarn)... "
-    (pkg install git nodejs nodejs-lts yarn -y) >/dev/null 2>&1 &
+    echo -e "${GREEN}Done${NC}"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo -e "${BLUE}[1/4]${NC} Environment: ${GREEN}macOS${NC}"
+    if ! command -v brew &> /dev/null; then
+        echo -e "${RED}Homebrew not found. Please install it first: https://brew.sh${NC}"
+        exit 1
+    fi
+    echo -n "Installing dependencies via Homebrew... "
+    (brew install node ffmpeg python libvips yt-dlp) >/dev/null 2>&1 &
     spinner $!
-    echo "Done"
+    echo -e "${GREEN}Done${NC}"
 elif command -v apt-get &> /dev/null; then
-    echo -n "Updating packages (Linux)... "
-    (sudo apt-get update -y) >/dev/null 2>&1 &
+    echo -e "${BLUE}[1/4]${NC} Environment: ${GREEN}Linux (APT)${NC}"
+    echo -n "Updating & Installing dependencies... "
+    (sudo apt-get update -y && sudo apt-get install git nodejs npm ffmpeg python3-pip libvips-dev -y && pip3 install yt-dlp) >/dev/null 2>&1 &
     spinner $!
-    echo "Done"
-
-    echo -n "Installing dependencies... "
-    (sudo apt-get install git nodejs npm -y && sudo npm install -g yarn) >/dev/null 2>&1 &
-    spinner $!
-    echo "Done"
+    echo -e "${GREEN}Done${NC}"
 else
-    echo "No supported package manager found (pkg/apt). Skipping system dependencies installation..."
+    echo -e "${RED}[!] Unsupported environment for auto-install. Please install Node.js, FFmpeg, and Python manually.${NC}"
 fi
 
-echo -n "Running yarn install in $WORK_DIR... "
-(cd "$WORK_DIR" && yarn install) >/dev/null 2>&1 &
+# 2. Node Modules Installation
+echo -n -e "${BLUE}[2/4]${NC} Installing Node modules... "
+(cd "$WORK_DIR" && npm install) >/dev/null 2>&1 &
 spinner $!
-echo "Done"
+echo -e "${GREEN}Done${NC}"
 
-echo -n "Configuring @whiskeysockets... "
+# 3. Baileys Configuration
+echo -n -e "${BLUE}[3/4]${NC} Configuring Core Kernel... "
 (
     MODULES_WS="$WORK_DIR/node_modules/@whiskeysockets"
     BUNDLED_WS="$WORK_DIR/@whiskeysockets"
-
-    if [ -d "$MODULES_WS" ]; then
-        rm -rf "$MODULES_WS"
-    fi
-
-    mkdir -p "$WORK_DIR/node_modules"
-
-
     if [ -d "$BUNDLED_WS" ]; then
+        rm -rf "$MODULES_WS"
+        mkdir -p "$WORK_DIR/node_modules"
         mv "$BUNDLED_WS" "$MODULES_WS"
     fi
 ) >/dev/null 2>&1 &
 spinner $!
-echo "Done"
+echo -e "${GREEN}Done${NC}"
 
-echo ""
-echo "Setup completed successfully."
-echo "To start the bot, run: node ."
-echo "node ."
+# 4. Finalizing
+echo -e "\n${GREEN}Setup successfully finalized.${NC}"
+echo -e "Run the following command to start:"
+echo -e "${BLUE}node .${NC}\n"

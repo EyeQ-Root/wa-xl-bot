@@ -1,4 +1,4 @@
-// Bot by Faro | xl | TG: @x81sq | Channel: @x1k4s
+// Bot by z.xrqr | xl | IG: z.xrqr | TG: @x81sq
 const DEFAULT_DELAY = 1000
 
 const {
@@ -358,7 +358,7 @@ module.exports = async (ss, m, chatUpdate, store) => {
                     'sticker-pack-id': 'xl.bot.' + Date.now(),
                     'sticker-pack-name': pack || '',
                     'sticker-pack-publisher': author || '',
-                    'emojis': ['🌸'],
+                    'emojis': ['🤖'],
                 };
                 const exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
                 const jsonBuf = Buffer.from(JSON.stringify(json), 'utf-8');
@@ -795,25 +795,61 @@ module.exports = async (ss, m, chatUpdate, store) => {
                         const quoted = await downloadQuoted();
                         if (!quoted) return reply("Reply to a sticker to convert to image.");
 
-                        const img2 = new webpLib.Image();
-                        await webpLib.Image.initLib();
-                        await img2.load(quoted.buffer);
-                        // getFrameData returns raw RGBA bytes
-                        const rawBuf2 = (img2.frames && img2.frames.length > 0) ? await img2.getFrameData(0) : null;
+                        const tmpIn = path.join(os.tmpdir(), `ti_in_${Date.now()}.webp`);
+                        const tmpOut = path.join(os.tmpdir(), `ti_out_${Date.now()}.png`);
+                        fs.writeFileSync(tmpIn, quoted.buffer);
 
-                        if (rawBuf2) {
+                        let conversionSuccess = false;
+                        try {
+                            await new Promise((resolve, reject) => {
+                                const proc = spawn(ffmpegPath, ['-y', '-i', tmpIn, '-frames:v', '1', tmpOut]);
+                                let errLog = '';
+                                proc.stderr.on('data', chunk => errLog += chunk.toString());
+                                proc.on('close', code => {
+                                    if (code === 0 && fs.existsSync(tmpOut)) resolve();
+                                    else reject(new Error(`ffmpeg failed (${code}): ${errLog.slice(-100)}`));
+                                });
+                                proc.on('error', reject);
+                            });
+                            conversionSuccess = true;
+                        } catch (ffmpegErr) {
+                            console.error('[.ti] FFmpeg fallback trigger:', ffmpegErr.message);
+                            // Fallback to pure JS (node-webpmux + jimp)
                             const Jimp = require('jimp');
-                            const w2 = img2.width, h2 = img2.height;
-                            const image = new Jimp(w2, h2);
-                            image.bitmap.data = rawBuf2;
-                            const imgBuf2 = await image.getBufferAsync(Jimp.MIME_PNG);
-                            await ss.sendMessage(from, { image: imgBuf2 }, { quoted: info });
-                        } else {
-                            reply('Could not extract frame from this sticker.');
+                            const img = new webpLib.Image();
+                            await webpLib.Image.initLib();
+                            await img.load(quoted.buffer);
+                            
+                            // Check for frames or anim metadata
+                            if (img.frames && img.frames.length > 0) {
+                                const rawBuf = await img.getFrameData(0);
+                                if (rawBuf) {
+                                    const image = new Jimp(img.width, img.height);
+                                    image.bitmap.data = Buffer.from(rawBuf);
+                                    const pngBuf = await image.getBufferAsync(Jimp.MIME_PNG);
+                                    fs.writeFileSync(tmpOut, pngBuf);
+                                    conversionSuccess = true;
+                                }
+                            } else {
+                                // Static webp, Jimp might be able to read it directly or we use vips
+                                const image = await Jimp.read(quoted.buffer);
+                                const pngBuf = await image.getBufferAsync(Jimp.MIME_PNG);
+                                fs.writeFileSync(tmpOut, pngBuf);
+                                conversionSuccess = true;
+                            }
                         }
+
+                        if (conversionSuccess && fs.existsSync(tmpOut)) {
+                            const imgBuf = fs.readFileSync(tmpOut);
+                            await ss.sendMessage(from, { image: imgBuf }, { quoted: info });
+                        } else {
+                            reply("Could not convert this sticker format.");
+                        }
+
+                        try { if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn); if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut); } catch (_) { }
                     } catch (e) {
                         console.error('[.ti]', e.message);
-                        reply("Error converting sticker to image.");
+                        reply(`Error: ${e.message.split('\n')[0]}`);
                     }
                 } break
 
@@ -1017,18 +1053,23 @@ module.exports = async (ss, m, chatUpdate, store) => {
                     }
                 } break
 
-                // ── Developer Info (.myinfo) — multi-format ──────
+                // ── Raw Developer Info (.myinfo) ─────────────
                 case "myinfo": {
                     const _sPath = './FaroModules/setting.js';
-                    let devName = "Faro";
-                    let github = "https://github.com/EyeQ-Root";
+                    let devName = "faro";
+                    let github = "https://github.com/EyeQ-Root/wa-xl-bot";
                     let contact = "+201006741515";
                     let devNumber = "201006741515";
+                    let instagram = "https://www.instagram.com/z.xrqr";
+                    let telegram = "https://t.me/x81sq";
+
                     try {
                         const _s = require(_sPath);
                         if (_s.devName) devName = _s.devName;
-                        if (_s.github) github = _s.github;
+                        if (_s.devGithub) github = _s.devGithub;
                         if (_s.devContact) contact = _s.devContact;
+                        if (_s.devInstagram) instagram = _s.devInstagram;
+                        if (_s.devTelegram) telegram = _s.devTelegram;
                         if (_s.devNumbers?.[0]) devNumber = _s.devNumbers[0].replace('@s.whatsapp.net', '');
                     } catch (e) { }
 
@@ -1038,8 +1079,30 @@ module.exports = async (ss, m, chatUpdate, store) => {
                     const _sec = Math.floor(uptime % 60);
                     const uptimeText = `${_h}h ${_m}m ${_sec}s`;
 
-                    // 1. vCard contact card
-                    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${devName}\nORG:xl Bot\nTEL;type=CELL;type=VOICE;waid=${devNumber}:${contact}\nURL:${github}\nNOTE:Bot Developer\nEND:VCARD`;
+                    // Raw System Info Style (Monospace)
+                    const rawInfo = `\`\`\`
+dev: ${devName}
+uptime: ${uptimeText}
+contact: ${contact}
+repo: ${github.replace('https://', '')}
+\`\`\``;
+
+                    // 1. Send raw text with minimalist preview
+                    await ss.sendMessage(from, { 
+                        text: rawInfo,
+                        contextInfo: {
+                            externalAdReply: {
+                                title: `sysinfo: ${devName}`,
+                                body: `running: ${uptimeText}`,
+                                mediaType: 1,
+                                thumbnailUrl: "https://github.com/EyeQ-Root.png",
+                                sourceUrl: github
+                            }
+                        }
+                    }, { quoted: info });
+
+                    // 2. Minimalist vCard
+                    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${devName}\nTEL;type=CELL;type=VOICE;waid=${devNumber}:${contact}\nEND:VCARD`;
                     await ss.sendMessage(from, {
                         contacts: {
                             displayName: devName,
@@ -1047,66 +1110,16 @@ module.exports = async (ss, m, chatUpdate, store) => {
                         }
                     }, { quoted: info });
 
-                    // 2. Buttons message — uptime + quick actions
-                    ss.sendjson(from, {
-                        "viewOnceMessage": {
-                            "message": {
-                                "buttonsMessage": {
-                                    "text": `Developer: ${devName}\nUptime: ${uptimeText}\nGitHub: ${github}`,
-                                    "contentText": "Quick Actions:",
-                                    "buttons": [
-                                        { "buttonId": "ping", "buttonText": { "displayText": "Ping" }, "type": 1 },
-                                        { "buttonId": "from", "buttonText": { "displayText": "Chat ID" }, "type": 1 },
-                                        { "buttonId": "refresh", "buttonText": { "displayText": "Refresh" }, "type": 1 },
-                                    ],
-                                    "headerType": 1
-                                }
-                            }
-                        }
-                    }, {});
-
-                    // 3. Poll — quick command picker
-                    ss.pollMenu(from, `${devName} - xl Bot`, [
-                        { vote: "Ping", cmd: "ping" },
-                        { vote: "My Info", cmd: "myinfo" },
-                        { vote: "Chat ID", cmd: "from" },
-                        { vote: "Full Menu", cmd: "menu2" },
+                    // 3. Clean Poll Actions
+                    ss.pollMenu(from, `actions`, [
+                        { vote: "ping", cmd: "ping" },
+                        { vote: "refresh", cmd: "refresh" },
+                        { vote: "menu", cmd: "menu" },
                     ], {
                         "remoteJid": "status@broadcast",
                         "participant": aiJid,
                     });
 
-                    // 4. List menu
-                    ss.sendjson(from, {
-                        "viewOnceMessage": {
-                            "message": {
-                                "interactiveMessage": {
-                                    "body": { "text": `${devName}  |  Uptime: ${uptimeText}` },
-                                    "footer": { "text": github },
-                                    "header": { "title": "Bot Status", "hasMediaAttachment": false },
-                                    "nativeFlowMessage": {
-                                        "buttons": [{
-                                            "name": "single_select",
-                                            "buttonParamsJson": JSON.stringify({
-                                                "title": "Commands",
-                                                "sections": [{
-                                                    "title": "Quick Actions",
-                                                    "rows": [
-                                                        { "title": "Ping", "description": "Check latency", "id": "ping" },
-                                                        { "title": "Chat ID", "description": "Get current JID", "id": "from" },
-                                                        { "title": "My JID", "description": "Your JID", "id": "me" },
-                                                        { "title": "Refresh", "description": "Fix stuck messages", "id": "refresh" },
-                                                        { "title": "Full Menu", "description": "All commands", "id": "menu2" },
-                                                    ]
-                                                }]
-                                            })
-                                        }],
-                                        "messageParamsJson": ""
-                                    }
-                                }
-                            }
-                        }
-                    }, {});
                 } break
 
                 default:

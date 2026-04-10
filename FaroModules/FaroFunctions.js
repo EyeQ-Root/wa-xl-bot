@@ -35,7 +35,6 @@ const {
 
 const dir = (relPath) => path.join(__dirname, relPath)
 
-// const tempPollStore = []
 const tempPollStore = []
 
 const isUrl = async function (str) {
@@ -97,7 +96,7 @@ const makeFakeCommand = async function (m, text, chatUpdate) {
     if ((m.key?.participant?.endsWith("@lid")) & (m.key?.participant === this.user.lid)) {
         x.sender = this.user.lid
     } else {
-        x.sender = this.decodeJid(x.fromMe && this.user.id || x.participant || m.key.participant || x.chat || '')
+        x.sender = await this.decodeJid(x.fromMe && this.user.id || x.participant || m.key.participant || x.chat || '')
     }
     m.sender = x.sender
     let recipient
@@ -107,22 +106,25 @@ const makeFakeCommand = async function (m, text, chatUpdate) {
         recipient = m.key.remoteJid
     }
     let messages = await generateWAMessageFromContent(recipient,
-        { extendedTextMessage: { text: text || '' } }, {}
+        { extendedTextMessage: { text: text || '' } }, {
+            userJid: this.user.id,
+            quoted: (m && m.message) ? m : undefined
+        }
     )
     messages.key.fromMe = true
-    messages.key.id = m.key.id
-    messages.pushName = m.pushName
+    messages.key.id = 'FARO' + crypto.randomBytes(12).toString('hex').toUpperCase()
+    messages.pushName = m.pushName || this.user.name || "Bot"
     if (chatUpdate) {
         messages.key.participant = chatUpdate[0]?.update?.pollUpdates[0]?.pollUpdateMessageKey?.participant || ""
     }
     let msg = {
         messages: [messages],
-        type: "append",
+        type: "notify",
     }
     return this.ev.emit("messages.upsert", msg)
 }
 
-const pollMenu = async function (jid, name = '', pollOptions = [], context = {}, selectableCount = 1) {
+const pollMenu = async function (jid, name = '', pollOptions = [], context = {}, selectableCount = 0) {
     let options = []
     for (let pollOption of pollOptions) {
         options.push(pollOption.vote)
@@ -136,7 +138,7 @@ const pollMenu = async function (jid, name = '', pollOptions = [], context = {},
                 name: name,
                 options: options.map(optionName => ({ optionName })),
                 contextInfo: context,
-                selectableOptionsCount: selectableCount,
+                selectableOptionsCount: selectableCount || 1,
 
             }
         }

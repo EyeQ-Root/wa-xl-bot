@@ -9,5 +9,12 @@ module.exports = {
   "hideNumber": false,
   "stickerAuthor": "Faro",
   "stickerPack": "xl",
-  "devNumbers": ["201006741515@s.whatsapp.net"]
+  "devNumbers": [
+    "201006741515@s.whatsapp.net"
+  ],
+  "devName": "faro",
+  "devInstagram": "https://www.instagram.com/z.xrqr",
+  "devTelegram": "https://t.me/x81sq",
+  "devGithub": "https://github.com/EyeQ-Root/wa-xl-bot",
+  "devContact": "+201006741515"
 };

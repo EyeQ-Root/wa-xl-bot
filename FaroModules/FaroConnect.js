@@ -353,39 +353,64 @@ async function ssStart() {
                     if (update.pollUpdates && key.fromMe) {
                         const pollCreation = await ss.getMessage(key)
 
-                        if (pollCreation) {
-                            let pollUpdate = await getAggregateVotesInPollMessage({
-                                message: pollCreation?.message?.botInvokeMessage?.message || pollCreation?.message,
-                                pollUpdates: update.pollUpdates,
-                            })
+                        if (pollCreation && pollCreation.message) {
+                            // Get the entry from our store
+                            let pollStoreEntry = ss.tempPollStore.find(item => item.id === key.id)
+                            if (!pollStoreEntry) continue
+                            if (!pollStoreEntry.lastState) pollStoreEntry.lastState = {}
 
-                            let selectedOptionName = pollUpdate.filter(v => v.voters.length !== 0)[0]?.name
-                            if (!selectedOptionName) continue
+                            // Identify the voter
+                            const pollVoterKey = update.pollUpdates?.[0]?.pollUpdateMessageKey
+                            const voter = pollVoterKey?.participant || key.remoteJid || ss.user.id
 
-                            const selectedCmd = ss.tempPollStore
-                                .find(item => item.id === key.id)
-                                ?.cmds.find(c => c.vote === selectedOptionName)
-                                ?.cmd
+                            // Instead of getAggregateVotesInPollMessage, let's look at the vote directly
+                            // update.pollUpdates[0].vote is the decrypted PollVoteMessage
+                            const voteMsg = update.pollUpdates[0].vote
+                            if (!voteMsg || !voteMsg.selectedOptions) continue
 
-                            const selectedCmdx = selectedCmd || selectedOptionName
+                            // The selectedOptions are SHA256 hashes of the option names
+                            const selectedHashes = voteMsg.selectedOptions.map(h => Buffer.from(h).toString('hex'))
 
-                            // Build a proper fake message targeting the correct chat
-                            const pollVoterKey = chatUpdate[0]?.update?.pollUpdates?.[0]?.pollUpdateMessageKey
-                            const pollRemoteJid = key.remoteJid || pollVoterKey?.remoteJid || ss.user.lid
-                            const pollParticipant = pollVoterKey?.participant || ""
-
-                            const fakePollMsg = {
-                                key: {
-                                    remoteJid: pollRemoteJid,
-                                    id: key.id,
-                                    fromMe: true,
-                                    participant: pollParticipant,
-                                },
-                                pushName: pollParticipant ? pollParticipant.split('@')[0] : ss.user.id.split(':')[0],
-                                sender: pollParticipant || ss.user.id,
+                            // Map hashes to option names using the store
+                            let currentVoterOptions = []
+                            for (const option of pollStoreEntry.cmds) {
+                                const hash = crypto.createHash('sha256').update(option.vote).digest('hex')
+                                if (selectedHashes.includes(hash)) {
+                                    currentVoterOptions.push(option.vote)
+                                }
                             }
 
-                            await ss.makeFakeCommand(fakePollMsg, selectedCmdx, chatUpdate)
+                            let previousVoterOptions = pollStoreEntry.lastState[voter] || []
+                            
+                            // Only process options that are NEWLY selected
+                            let newSelections = currentVoterOptions.filter(opt => !previousVoterOptions.includes(opt))
+                            
+                            // Update state for this voter
+                            pollStoreEntry.lastState[voter] = currentVoterOptions
+
+                            if (newSelections.length === 0) continue
+
+                            for (const selectedOptionName of newSelections) {
+                                const selectedCmd = pollStoreEntry.cmds.find(c => c.vote === selectedOptionName)?.cmd
+                                const selectedCmdx = selectedCmd || selectedOptionName
+
+                                // Build a proper fake message targeting the correct chat
+                                const pollRemoteJid = key.remoteJid || pollVoterKey?.remoteJid || ss.user.lid
+                                const pollParticipant = pollVoterKey?.participant || ""
+
+                                const fakePollMsg = {
+                                    key: {
+                                        remoteJid: pollRemoteJid,
+                                        id: key.id,
+                                        fromMe: true,
+                                        participant: pollParticipant,
+                                    },
+                                    pushName: pollParticipant ? pollParticipant.split('@')[0] : ss.user.id.split(':')[0],
+                                    sender: pollParticipant || ss.user.id,
+                                }
+
+                                await ss.makeFakeCommand(fakePollMsg, selectedCmdx, chatUpdate)
+                            }
                         } else {
                             return false
                         }

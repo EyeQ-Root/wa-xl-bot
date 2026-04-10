@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $src = "c:\Users\abdo\Downloads\Telegram Desktop\xl-Boot"
-$dest = "c:\Users\abdo\Downloads\Telegram Desktop\xl-Boot-obfuscated"
+$dest = "c:\Users\abdo\Downloads\Telegram Desktop\xl-Boot-back"
 
 if (Test-Path $dest) {
     Remove-Item -Recurse -Force $dest
@@ -10,10 +10,10 @@ New-Item -ItemType Directory -Path $dest | Out-Null
 
 Write-Host "Copying files to safe directory..."
 Copy-Item "$src\faro.js" -Destination $dest
-Copy-Item "$src\SS" -Destination $dest -Recurse
+Copy-Item "$src\FaroModules" -Destination $dest -Recurse
 Copy-Item "$src\package.json" -Destination $dest
 if (Test-Path "$src\package-lock.json") { Copy-Item "$src\package-lock.json" -Destination $dest }
-Copy-Item "$src\TUTORIAL (IMPORTANT).txt" -Destination $dest
+Copy-Item "$src\setup.sh" -Destination $dest
 
 Write-Host "Starting hard obfuscation..."
 Set-Location $dest
